@@ -1,9 +1,17 @@
 import { useRef, useEffect, useState } from "react";
 
-const Canvas = ({ color, scale, setScale, setLastImage }) => {
+const Canvas = ({
+  color,
+  scale,
+  setScale,
+  lastImage,
+  setLastImage,
+  selectedShape,
+}) => {
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -40,22 +48,54 @@ const Canvas = ({ color, scale, setScale, setLastImage }) => {
     const canvas = canvasRef.current;
 
     if (setLastImage) {
-      setLastImage(() => {
-        const savedImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        return () => ctx.putImageData(savedImage, 0, 0);
-      });
+      setLastImage(ctx.getImageData(0, 0, canvas.width, canvas.height));
     }
 
-    ctx.beginPath();
-    ctx.moveTo(e.nativeEvent.offsetX / scale, e.nativeEvent.offsetY / scale);
+    const x = e.nativeEvent.offsetX / scale;
+    const y = e.nativeEvent.offsetY / scale;
+    setStartPos({ x, y });
+
+    if (selectedShape === "freehand") {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+
     setIsDrawing(true);
   };
 
   const draw = (e) => {
     if (!isDrawing) return;
     const ctx = ctxRef.current;
-    ctx.lineTo(e.nativeEvent.offsetX / scale, e.nativeEvent.offsetY / scale);
-    ctx.stroke();
+    const canvas = canvasRef.current;
+    const x = e.nativeEvent.offsetX / scale;
+    const y = e.nativeEvent.offsetY / scale;
+
+    ctx.putImageData(lastImage, 0, 0);
+
+    ctx.fillStyle = color;
+
+    if (selectedShape === "freehand") {
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    } else if (selectedShape === "rectangle") {
+      const width = x - startPos.x;
+      const height = y - startPos.y;
+      ctx.fillRect(startPos.x, startPos.y, width, height);
+      ctx.strokeRect(startPos.x, startPos.y, width, height);
+    } else if (selectedShape === "circle") {
+      const width = x - startPos.x;
+      const height = y - startPos.y;
+      const size = Math.max(Math.abs(width), Math.abs(height));
+
+      const topLeftX = width < 0 ? startPos.x - size : startPos.x;
+      const topLeftY = height < 0 ? startPos.y - size : startPos.y;
+      const radius = size / 2;
+
+      ctx.beginPath();
+      ctx.arc(topLeftX + radius, topLeftY + radius, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
   };
 
   const stopDrawing = () => {

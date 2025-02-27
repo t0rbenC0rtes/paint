@@ -1,7 +1,6 @@
 import { IoIosColorPalette } from "react-icons/io";
-import { FaUndo } from "react-icons/fa";
 
-const Toolbar = ({ setColor, handleUndo }) => {
+const Toolbar = ({ setColor, handleUndo, setSelectedShape }) => {
   return (
     <div className="toolbar">
       <label htmlFor="colorPicker">
@@ -12,9 +11,10 @@ const Toolbar = ({ setColor, handleUndo }) => {
         id="colorPicker"
         onChange={(e) => setColor(e.target.value)}
       />
-      <button onClick={handleUndo} className="undo">
-        <FaUndo />
-      </button>
+      <button onClick={handleUndo}>Undo</button>
+      <button onClick={() => setSelectedShape("freehand")}>Freehand</button>
+      <button onClick={() => setSelectedShape("rectangle")}>Rectangle</button>
+      <button onClick={() => setSelectedShape("circle")}>Circle</button>
     </div>
   );
 };
